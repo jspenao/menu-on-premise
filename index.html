@@ -1,14 +1,322 @@
 <!DOCTYPE html>
-<!-- Contenido completo actualizado del código HTML (resumido aquí por simplicidad) -->
-<!-- Inserta aquí el código completo final que se ha trabajado -->
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Menú Interactivo</title>
-  <!-- Todo el CSS embebido aquí -->
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial Black', sans-serif;
+      background-color: #f2f2f2;
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .pantalla {
+      display: none;
+      width: 100%;
+      max-width: 1920px;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    .activo {
+      display: block;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 18px;
+      width: 300px;
+      margin: 10px 0;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: #d60000;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .menu {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      width: 100%;
+    }
+
+    .producto {
+      position: relative;
+      background-color: #fff;
+      border-radius: 12px;
+      width: 600px;
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .producto img {
+      width: 100%;
+      height: 600px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+
+    .producto h3 {
+      margin: 10px 0 5px;
+    }
+
+    .producto p.descripcion {
+      font-family: Arial, sans-serif;
+      color: #666;
+      font-size: 16px;
+    }
+
+    .agotado-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: red;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: none;
+      font-size: 16px;
+    }
+
+    .producto.agotado .agotado-label {
+      display: block;
+    }
+
+    .producto.agotado button {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .stock {
+      font-size: 16px;
+      margin-top: 5px;
+      color: #555;
+    }
+
+    #codigoPedido {
+      font-size: 24px;
+      margin-top: 20px;
+      color: green;
+    }
+
+    #descargaArchivo {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #666;
+      display: block;
+    }
+
+    .logo {
+      width: 200px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+
+    .logo-large {
+      width: 500px;
+      height: auto;
+      margin: 30px auto;
+    }
+
+    #saludoContainer {
+      line-height: 1.2;
+      margin-bottom: 30px;
+    }
+
+    #saludoContainer span {
+      display: block;
+      font-size: 32px;
+      color: #d60000;
+      margin-top: 10px;
+    }
+
+    footer {
+      width: 100%;
+      background-color: #ccc;
+      text-align: center;
+      padding: 10px;
+      font-size: 14px;
+      color: #444;
+      position: relative;
+      bottom: 0;
+    }
+
+    @media screen and (max-width: 1200px) {
+      .pantalla {
+        height: auto;
+        padding-bottom: 40px;
+      }
+      .producto {
+        width: 90%;
+      }
+    }
+  </style>
 </head>
 <body>
-  <!-- Todo el contenido de la página aquí -->
+  <div class="pantalla activo" id="inicio">
+    <div>
+      <img src="http://santiswish.org/wp-content/uploads/2025/06/LOGO-ON-PREMISE.png" alt="Logo" class="logo-large">
+      <h2>Bienvenido,<br>¿Cuál es tu nombre?</h2>
+      <input type="text" id="nombre" placeholder="Escribe tu nombre" />
+      <br />
+      <button onclick="mostrarMenu()">Ver Menú</button>
+    </div>
+  </div>
+
+  <div class="pantalla" id="menu">
+    <div id="saludoContainer">
+      <h2>Hola</h2>
+      <span id="saludoNombre"></span>
+      <h3 style="margin-top: 10px; font-size: 22px; color: #333">Selecciona tu pedido</h3>
+    </div>
+    <div class="menu" id="listaProductos"></div>
+  </div>
+
+  <div class="pantalla" id="procesando">
+    <img src="http://santiswish.org/wp-content/uploads/2025/06/LOGO-ON-PREMISE.png" alt="Logo cierre" class="logo-large">
+    <h2>Procesando tu pedido...</h2>
+    <div id="codigoPedido"></div>
+    <a id="descargaArchivo" href="#" download="historial_pedidos.txt">Descargar pedido</a>
+    <br />
+    <button onclick="reiniciarApp()">Finalizar</button>
+  </div>
+
+  <footer>
+    On premise Day 2025 &copy; Todos los derechos reservados
+  </footer>
+
+  <script>
+    const inventario = {
+      hamburguesa: 5,
+      pizza: 5,
+      poke: 5
+    };
+
+    const contadorPedidos = {
+      H1: 0,
+      P1: 0,
+      S1: 0
+    };
+
+    const productos = [
+      {
+        id: 'hamburguesa',
+        codigo: 'H1',
+        nombre: 'Hamburguesa Fontana',
+        descripcion: 'Carne de res o pechuga de pollo, tocineta, queso cheddar, pepinillos agridulces, vegetales, pan brioche, acompañada de papa francesa.',
+        imagen: 'http://santiswish.org/wp-content/uploads/2025/06/HAMBURGUESA.png'
+      },
+      {
+        id: 'pizza',
+        codigo: 'P1',
+        nombre: 'Pizza',
+        descripcion: 'Escoge un sabor: Hawaiana, Jamón y Queso, Peperoni o Vegetariana.',
+        imagen: 'http://santiswish.org/wp-content/uploads/2025/06/PIZZA.png'
+      },
+      {
+        id: 'poke',
+        codigo: 'S1',
+        nombre: 'Avocado Salmon Poke',
+        descripcion: 'Salmón, arroz de sushi, guacamole oriental, vinagreta, ponzu furikake, quinua crocante, aguacate parrillado, cilantro y mayo de ají amarillo.',
+        imagen: 'http://santiswish.org/wp-content/uploads/2025/06/POKE.png'
+      }
+    ];
+
+    let nombreUsuario = '';
+    let productoSeleccionado = null;
+    const historialPedidos = [];
+
+    function mostrarMenu() {
+      const nombre = document.getElementById('nombre').value.trim();
+      if (!nombre) {
+        alert('Por favor escribe tu nombre');
+        return;
+      }
+      nombreUsuario = nombre;
+      document.getElementById('saludoNombre').innerText = nombre;
+      document.getElementById('inicio').classList.remove('activo');
+      document.getElementById('menu').classList.add('activo');
+      renderMenu();
+    }
+
+    function renderMenu() {
+      const contenedor = document.getElementById('listaProductos');
+      contenedor.innerHTML = '';
+      productos.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'producto' + (inventario[p.id] === 0 ? ' agotado' : '');
+        div.innerHTML = `
+          <div class="agotado-label">Agotado</div>
+          <img src="${p.imagen}" alt="${p.nombre}">
+          <h3>${p.nombre}</h3>
+          <p class="descripcion">${p.descripcion}</p>
+          <p class="stock">Stock: ${inventario[p.id]}</p>
+          <button onclick="seleccionarProducto('${p.id}')" ${inventario[p.id] === 0 ? 'disabled' : ''}>Seleccionar</button>
+        `;
+        contenedor.appendChild(div);
+      });
+    }
+
+    function seleccionarProducto(id) {
+      if (inventario[id] > 0) {
+        inventario[id]--;
+        productoSeleccionado = productos.find(p => p.id === id);
+        contadorPedidos[productoSeleccionado.codigo]++;
+        const codigoFinal = productoSeleccionado.codigo + '-' + contadorPedidos[productoSeleccionado.codigo];
+
+        // Guardar en historial
+        historialPedidos.push(`Nombre: ${nombreUsuario}\nProducto: ${productoSeleccionado.nombre}\nCódigo: ${codigoFinal}\n\n`);
+
+        document.getElementById('menu').classList.remove('activo');
+        document.getElementById('procesando').classList.add('activo');
+        document.getElementById('codigoPedido').innerText = `Tu código de pedido es: ${codigoFinal}`;
+        generarArchivoPedido();
+      }
+    }
+
+    function generarArchivoPedido() {
+      const contenido = `Historial de pedidos\n\n${historialPedidos.join('')}`;
+      const blob = new Blob([contenido], { type: 'text/plain' });
+      const link = document.getElementById('descargaArchivo');
+      link.href = URL.createObjectURL(blob);
+      link.style.display = 'block';
+    }
+
+    function reiniciarApp() {
+      document.getElementById('procesando').classList.remove('activo');
+      document.getElementById('inicio').classList.add('activo');
+      document.getElementById('nombre').value = '';
+      document.getElementById('saludoNombre').innerText = '';
+      document.getElementById('codigoPedido').innerText = '';
+      document.getElementById('descargaArchivo').style.display = 'none';
+      renderMenu();
+    }
+  </script>
 </body>
 </html>
